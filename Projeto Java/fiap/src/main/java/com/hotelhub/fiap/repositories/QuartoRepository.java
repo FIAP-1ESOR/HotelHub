@@ -11,6 +11,5 @@ import java.util.List;
 public interface QuartoRepository extends JpaRepository<Quarto, Integer> {
     List<Quarto> findByHotelId(Integer hotelId);
     
-    // Busca quartos de um hotel filtrando pelo status (ex: buscar apenas 'LIVRE' na hora do check-in)
     List<Quarto> findByHotelIdAndStatus(Integer hotelId, String status);
 }

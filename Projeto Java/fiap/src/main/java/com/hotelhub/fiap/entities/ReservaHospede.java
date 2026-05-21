@@ -45,7 +45,7 @@ public class ReservaHospede {
     private Boolean termoConsentimentoAceito;
 
     @ManyToOne
-    @JoinColumn(name = "quarto_id") // Pode ser nulo
+    @JoinColumn(name = "quarto_id")
     private Quarto quarto;
 
     @Column(name = "status_reserva", nullable = false, length = 25)

@@ -48,26 +48,20 @@ public class TotemService {
     @Autowired
     private DicionarioTotemRepository dicionarioRepository;
 
-    // Adicione este método no corpo da classe TotemService:
     public InicializacaoResponseDTO getDadosIniciais(Integer hotelId, String idiomaIso) {
-        // 1. Busca a configuração visual do hotel
         ConfigWhiteLabel config = whiteLabelRepository.findByHotelId(hotelId)
                 .orElseThrow(() -> new RuntimeException("Configuração visual não encontrada para este hotel."));
 
-        // 2. Busca o Idioma para pegar o ID dele
         Idioma idioma = idiomaRepository.findByHotelIdAndCodigoIso(hotelId, idiomaIso)
                 .orElseThrow(() -> new RuntimeException("Idioma não suportado por este hotel."));
 
-        // 3. Busca todas as frases do totem para aquele hotel e idioma
         List<DicionarioTotem> traducoes = dicionarioRepository.findByHotelIdAndIdiomaId(hotelId, idioma.getId());
 
-        // 4. Monta o Mapa (Chave -> Valor) para facilitar a vida do Frontend (React/Angular)
         java.util.Map<String, String> dicionarioMap = new java.util.HashMap<>();
         for (DicionarioTotem traducao : traducoes) {
             dicionarioMap.put(traducao.getChaveComponente(), traducao.getTextoTraduzido());
         }
 
-        // 5. Monta a resposta final
         InicializacaoResponseDTO response = new InicializacaoResponseDTO();
         response.setCorPrimariaHex(config.getCorPrimariaHex());
         response.setCorSecundariaHex(config.getCorSecundariaHex());
@@ -86,21 +80,18 @@ public class TotemService {
 
     @Transactional
     public ReservaHospede realizarCheckin(Integer hotelId, CheckinRequestDTO request) {
-        // Validação dupla novamente por segurança
         ReservaHospede reserva = buscarReservaEstrita(hotelId, request.getCodigoReserva(), request.getDocumentoCpfPassaporte());
 
         if (!"PENDENTE".equals(reserva.getStatusReserva())) {
             throw new RuntimeException("Reserva não está pendente para check-in.");
         }
 
-        // Aloca Quarto (se não tiver)
         if (reserva.getQuarto() == null) {
             List<Quarto> quartosLivres = quartoRepository.findByHotelIdAndStatus(hotelId, "LIVRE");
             if (quartosLivres.isEmpty()) throw new RuntimeException("Sem quartos disponíveis.");
             reserva.setQuarto(quartosLivres.get(0));
         }
 
-        // Muda quarto para OCUPADO e grava entrada
         Quarto quarto = reserva.getQuarto();
         quarto.setStatus("OCUPADO");
         quartoRepository.save(quarto);
@@ -109,7 +100,6 @@ public class TotemService {
         reserva.setDataEntradaReal(LocalDateTime.now());
         reserva.setTermoConsentimentoAceito(true);
 
-        // Emite e Ativa Cartão Físico
         CartaoChave cartao = new CartaoChave();
         cartao.setHotel(reserva.getHotel());
         cartao.setReserva(reserva);
@@ -132,11 +122,9 @@ public class TotemService {
 
     @Transactional
     public TransacaoPagamento realizarCheckout(Integer hotelId, CheckoutRequestDTO request) {
-        // Encontra a reserva pelo ID que o Frontend enviou após a tela do extrato
         ReservaHospede reserva = reservaRepository.findById(request.getReservaId())
                 .orElseThrow(() -> new RuntimeException("Reserva não encontrada."));
 
-        // 1. Grava o Pagamento
         TransacaoPagamento pagamento = new TransacaoPagamento();
         pagamento.setHotel(reserva.getHotel());
         pagamento.setReserva(reserva);
@@ -145,19 +133,16 @@ public class TotemService {
         pagamento.setDataHoraPagamento(LocalDateTime.now());
         pagamentoRepository.save(pagamento);
 
-        // 2. Desativa o Cartão NA HORA
         List<CartaoChave> cartoes = cartaoChaveRepository.findByReservaId(reserva.getId());
         for (CartaoChave c : cartoes) {
             c.setStatusCartao("INATIVO");
         }
         cartaoChaveRepository.saveAll(cartoes);
 
-        // 3. Quarto vai DIRETO para LIMPEZA
         Quarto quarto = reserva.getQuarto();
         quarto.setStatus("LIMPEZA");
         quartoRepository.save(quarto);
 
-        // 4. Reserva é finalizada
         reserva.setStatusReserva("FINALIZADA");
         reserva.setDataSaidaReal(LocalDateTime.now());
         reservaRepository.save(reserva);

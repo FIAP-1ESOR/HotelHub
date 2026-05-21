@@ -12,7 +12,7 @@ public class ConfigWhiteLabel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @OneToOne // Relação 1:1, já que cada hotel tem apenas uma configuração
+    @OneToOne
     @JoinColumn(name = "hotel_id", nullable = false)
     private Hotel hotel;
 

@@ -40,7 +40,6 @@ public class AdminService {
     @Autowired
     private CartaoChaveRepository cartaoChaveRepository;
 
-    // Adicione este método no corpo da classe:
     public java.util.Map<String, Object> gerarMetricasDashboard(Integer hotelId) {
         List<Quarto> todosQuartos = quartoRepository.findByHotelId(hotelId);
         List<TransacaoPagamento> transacoes = pagamentoRepository.findByHotelId(hotelId);
@@ -50,7 +49,6 @@ public class AdminService {
         long quartosOcupados = todosQuartos.stream().filter(q -> "OCUPADO".equals(q.getStatus())).count();
         long quartosEmLimpeza = todosQuartos.stream().filter(q -> "LIMPEZA".equals(q.getStatus())).count();
 
-        // Calcula o faturamento total somando todos os pagamentos
         java.math.BigDecimal faturamentoTotal = transacoes.stream()
                 .map(TransacaoPagamento::getValorPago)
                 .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
@@ -98,7 +96,6 @@ public class AdminService {
         consumo.setQuantidade(dto.getQuantidade());
         consumo.setPrecoUnitarioMomento(dto.getPrecoUnitarioMomento());
         
-        // Calcula o total do item
         consumo.setValorTotalItem(dto.getPrecoUnitarioMomento().multiply(new java.math.BigDecimal(dto.getQuantidade())));
 
         return consumoRepository.save(consumo);
@@ -116,10 +113,9 @@ public class AdminService {
         reserva.setQuantidadePessoas(dto.getQuantidadePessoas());
         reserva.setDataEntradaPrevista(dto.getDataEntradaPrevista());
         reserva.setDataSaidaPrevista(dto.getDataSaidaPrevista());
-        reserva.setTermoConsentimentoAceito(false); // Só aceita no check-in
+        reserva.setTermoConsentimentoAceito(false);
         reserva.setStatusReserva("PENDENTE");
 
-        // Geração do Código Único (Ex: HTL-2026-A1B2C)
         int ano = java.time.LocalDate.now().getYear();
         String hash = java.util.UUID.randomUUID().toString().substring(0, 5).toUpperCase();
         reserva.setCodigoReserva("HTL-" + ano + "-" + hash);
@@ -127,9 +123,6 @@ public class AdminService {
         return reservaRepository.save(reserva);
     }
     
- // ==========================================
-    // 2. CHECK-IN MANUAL (RECEPÇÃO)
-    // ==========================================
     @Transactional
     public ReservaHospede realizarCheckinManual(Integer hotelId, CheckinManualDTO dto) {
         ReservaHospede reserva = reservaRepository.findById(dto.getReservaId())
@@ -142,7 +135,6 @@ public class AdminService {
             throw new RuntimeException("Reserva não está pendente.");
         }
 
-        // Se o recepcionista escolheu um quarto específico
         if (dto.getQuartoId() != null) {
             Quarto quartoEscolhido = quartoRepository.findById(dto.getQuartoId())
                     .orElseThrow(() -> new RuntimeException("Quarto inválido."));
@@ -151,23 +143,19 @@ public class AdminService {
             }
             reserva.setQuarto(quartoEscolhido);
         } else {
-            // Se não escolheu, o sistema aloca o primeiro livre
             List<Quarto> quartosLivres = quartoRepository.findByHotelIdAndStatus(hotelId, "LIVRE");
             if (quartosLivres.isEmpty()) throw new RuntimeException("Sem quartos disponíveis.");
             reserva.setQuarto(quartosLivres.get(0));
         }
 
-        // Atualiza os status
         Quarto quarto = reserva.getQuarto();
         quarto.setStatus("OCUPADO");
         quartoRepository.save(quarto);
 
         reserva.setStatusReserva("RESERVA_ATIVA");
         reserva.setDataEntradaReal(LocalDateTime.now());
-        // Aqui o recepcionista recolhe a assinatura em papel ou tablet
         reserva.setTermoConsentimentoAceito(true); 
 
-        // Grava o cartão físico
         CartaoChave cartao = new CartaoChave();
         cartao.setHotel(reserva.getHotel());
         cartao.setReserva(reserva);
@@ -178,9 +166,6 @@ public class AdminService {
         return reservaRepository.save(reserva);
     }
 
-    // ==========================================
-    // 3. CHECK-OUT MANUAL (RECEPÇÃO)
-    // ==========================================
     @Transactional
     public TransacaoPagamento realizarCheckoutManual(Integer hotelId, Integer reservaId, String metodoPagamento, java.math.BigDecimal valorPago) {
         ReservaHospede reserva = reservaRepository.findById(reservaId)

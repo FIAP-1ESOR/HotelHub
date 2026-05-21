@@ -29,7 +29,7 @@ public class MasterService {
 
         hotel.setNomeEstabelecimento(dto.getNomeEstabelecimento());
         hotel.setEmailSuporteMock(dto.getEmailSuporteMock());
-        hotel.setStatusLicenca(dto.getStatusLicenca()); // ATIVO ou INATIVO
+        hotel.setStatusLicenca(dto.getStatusLicenca());
 
         return hotelRepository.save(hotel);
     }

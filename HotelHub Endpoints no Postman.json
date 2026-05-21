@@ -161,30 +161,6 @@
 							]
 						}
 					}
-				},
-				{
-					"name": "6. GET Identificar Cartão na Urna (Hardware)",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "X-Hotel-ID",
-								"value": "{{hotel_id}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/totem/cartoes/KEY-A1B2C3D4E5F6/reserva",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"totem",
-								"cartoes",
-								"KEY-A1B2C3D4E5F6",
-								"reserva"
-							]
-						}
-					}
 				}
 			]
 		},

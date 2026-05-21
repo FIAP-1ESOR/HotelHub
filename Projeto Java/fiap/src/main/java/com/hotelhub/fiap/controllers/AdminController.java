@@ -94,7 +94,7 @@ public class AdminController {
         }
     }
 
-    // 3. Recepção: Lançamento manual de consumos (ex: achou uma lata vazia no checkout)
+    // 3. Recepção: Lançamento manual de consumos
     // Ex: POST http://localhost:8080/admin/consumos
     @PostMapping("/consumos")
     public ResponseEntity<?> lancarConsumoManual(@RequestHeader("X-Hotel-ID") Integer hotelId, 

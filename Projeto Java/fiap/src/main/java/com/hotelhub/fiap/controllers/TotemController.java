@@ -27,7 +27,7 @@ public class TotemController {
     @Autowired
     private TotemService totemService;
 
-    // 1. Busca configurações visuais e dicionário para montar a tela do totem
+    // Busca configurações visuais e dicionário para montar a tela do totem
     // Exemplo de uso no Postman: GET http://localhost:8080/totem/inicializacao?idiomaIso=pt
     @GetMapping("/inicializacao")
     public ResponseEntity<?> getDadosIniciais(@RequestHeader("X-Hotel-ID") Integer hotelId, 
@@ -36,7 +36,6 @@ public class TotemController {
             InicializacaoResponseDTO response = totemService.getDadosIniciais(hotelId, idiomaIso);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            // Retorna Erro 400 com a mensagem caso algo dê errado
             return ResponseEntity.badRequest().body(e.getMessage()); 
         }
     }
@@ -87,8 +86,6 @@ public class TotemController {
                                               @RequestBody CheckoutRequestDTO request) {
         try {
             TransacaoPagamento transacao = totemService.realizarCheckout(hotelId, request);
-            // Ao retornar sucesso 200, o frontend mostra a mensagem: 
-            // "Pagamento aprovado. Cartão desativado, por favor deposite-o na fenda."
             return ResponseEntity.ok(transacao);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
