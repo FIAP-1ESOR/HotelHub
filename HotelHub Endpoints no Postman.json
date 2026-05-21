@@ -1,0 +1,531 @@
+{
+	"info": {
+		"_postman_id": "b3c4d5e6-f7a8-9012-3456-flexmedia_v2",
+		"name": "FlexMedia Hotel Hub (v2.0 - Completa)",
+		"description": "Coleção Definitiva da API Hotel Hub. Inclui fluxos de validação estrita no Totem, plano de contingência (check-in manual) no Admin e uploads multiplexados no Master.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Módulo 1 - Totem (Autoatendimento)",
+			"item": [
+				{
+					"name": "1. GET Inicialização (Cores e Dicionário)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/totem/inicializacao?idiomaIso=pt",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"totem",
+								"inicializacao"
+							],
+							"query": [
+								{
+									"key": "idiomaIso",
+									"value": "pt"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "2. GET Buscar Reserva (Check-in Passo 1)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/totem/reservas/busca?codigo=GP-2025-003&documento=567.890.123-45",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"totem",
+								"reservas",
+								"busca"
+							],
+							"query": [
+								{
+									"key": "codigo",
+									"value": "GP-2025-003"
+								},
+								{
+									"key": "documento",
+									"value": "567.890.123-45"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "3. POST Efetivar Check-in (Passo 2)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"codigoReserva\": \"GP-2025-003\",\n    \"documentoCpfPassaporte\": \"567.890.123-45\",\n    \"termoConsentimentoAceito\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/totem/checkin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"totem",
+								"checkin"
+							]
+						}
+					}
+				},
+				{
+					"name": "4. GET Consultar Extrato Seguro (Checkout Passo 1)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/totem/extrato?codigo=GP-2025-001&documento=345.678.901-23",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"totem",
+								"extrato"
+							],
+							"query": [
+								{
+									"key": "codigo",
+									"value": "GP-2025-001"
+								},
+								{
+									"key": "documento",
+									"value": "345.678.901-23"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "5. POST Realizar Checkout (Passo 2)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reservaId\": 1,\n    \"metodoPagamento\": \"PIX\",\n    \"valorPago\": 1789.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/totem/checkout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"totem",
+								"checkout"
+							]
+						}
+					}
+				},
+				{
+					"name": "6. GET Identificar Cartão na Urna (Hardware)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/totem/cartoes/KEY-A1B2C3D4E5F6/reserva",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"totem",
+								"cartoes",
+								"KEY-A1B2C3D4E5F6",
+								"reserva"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Módulo 2 - Admin (Recepção/Governança)",
+			"item": [
+				{
+					"name": "1. GET Listar Quartos (Governança)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/quartos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"quartos"
+							]
+						}
+					}
+				},
+				{
+					"name": "2. PATCH Liberar Quarto Limpo",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "text/plain"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "LIVRE"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/quartos/3/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"quartos",
+								"3",
+								"status"
+							]
+						}
+					}
+				},
+				{
+					"name": "3. POST Criar Nova Reserva (Walk-in)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nomeHospede\": \"Lucas Gabriel\",\n    \"documentoCpfPassaporte\": \"111.222.333-44\",\n    \"quantidadePessoas\": 2,\n    \"dataEntradaPrevista\": \"2025-08-10T14:00:00\",\n    \"dataSaidaPrevista\": \"2025-08-15T12:00:00\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/reservas",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"reservas"
+							]
+						}
+					}
+				},
+				{
+					"name": "4. POST Check-in Manual (Contingência)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reservaId\": 3,\n    \"quartoId\": 4\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/checkin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"checkin"
+							]
+						}
+					}
+				},
+				{
+					"name": "5. POST Check-out Manual (Contingência)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reservaId\": 1,\n    \"metodoPagamento\": \"CARTAO_DEBITO\",\n    \"valorPago\": 1789.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/checkout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"checkout"
+							]
+						}
+					}
+				},
+				{
+					"name": "6. POST Lançar Consumo Frigobar",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reservaId\": 1,\n    \"tipoConsumo\": \"FRIGOBAR\",\n    \"descricaoItem\": \"Agua com Gas 500ml\",\n    \"quantidade\": 2,\n    \"precoUnitarioMomento\": 9.50\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/consumos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"consumos"
+							]
+						}
+					}
+				},
+				{
+					"name": "7. GET Dashboard (Faturamento)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Hotel-ID",
+								"value": "{{hotel_id}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"dashboard"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Módulo 3 - Master (Global / Gestão da Empresa)",
+			"item": [
+				{
+					"name": "1. GET Métricas Globais da Plataforma",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/master/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"master",
+								"dashboard"
+							]
+						}
+					}
+				},
+				{
+					"name": "2. POST Criar Novo Hotel",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nomeEstabelecimento\": \"Resort Paraiso Tropical\",\n    \"cnpj\": \"55.666.777/0001-88\",\n    \"emailSuporteMock\": \"admin@paraisotropical.com\",\n    \"statusLicenca\": \"ATIVO\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/master/hoteis",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"master",
+								"hoteis"
+							]
+						}
+					}
+				},
+				{
+					"name": "3. PUT Editar Dados Básicos do Hotel",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nomeEstabelecimento\": \"Grand Palace Editado\",\n    \"emailSuporteMock\": \"novo_admin@grandpalace.com\",\n    \"statusLicenca\": \"ATIVO\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/master/hoteis/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"master",
+								"hoteis",
+								"1"
+							]
+						}
+					}
+				},
+				{
+					"name": "4. POST Combo Master (White Label Completo)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "corPrimariaHex",
+									"value": "#1a56db",
+									"type": "text"
+								},
+								{
+									"key": "corSecundariaHex",
+									"value": "#1e293b",
+									"type": "text"
+								},
+								{
+									"key": "infoHotelTexto",
+									"value": "Nova frase incrível de boas-vindas para o totem!",
+									"type": "text"
+								},
+								{
+									"key": "logoFile",
+									"description": "Selecione a imagem clicando em Select Files",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "splashFile",
+									"description": "Selecione o banner clicando em Select Files",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/master/hoteis/1/white-label-completo",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"master",
+								"hoteis",
+								"1",
+								"white-label-completo"
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "hotel_id",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}

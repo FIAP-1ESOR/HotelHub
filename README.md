@@ -1,0 +1,1 @@
+clone o projeto, abra-o no Spring Tools. Clique com o botão direito no pom.xml, abra-o no terminal local e rode com 'mvn spring-boot:run'
