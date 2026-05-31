@@ -1,0 +1,1846 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlexMedia Hotel Hub — Totem</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    /* SOBRESCRITAS por /totem/inicializacao (white label) */
+    --primary: #1a56db;
+    --secondary: #1e293b;
+    --bg: #0f0f12;
+    --surface: #ffffff;
+    --text: #1e293b;
+    --muted: #94a3b8;
+    --soft: #f1f5f9;
+    --danger: #dc2626;
+    --success: #16a34a;
+    --radius: 18px;
+    --totem-w: 380px;
+    --totem-h: 680px;
+  }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: radial-gradient(circle at 20% 10%, #1a1a2e 0%, #0f0f12 60%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 30px 20px;
+    color: #fff;
+  }
+
+  /* ====== STATUS DA API ====== */
+  .api-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 18px;
+    background: rgba(255,255,255,.04);
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.06);
+    max-width: 95vw;
+  }
+  .api-bar .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ff9d00;
+    box-shadow: 0 0 8px currentColor;
+  }
+  .api-bar.online .dot { background: #3ddc84; color: #3ddc84; }
+  .api-bar.offline .dot { background: #ff4f4f; color: #ff4f4f; }
+  .api-bar select, .api-bar input {
+    background: rgba(0,0,0,.3);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 6px;
+    color: #ddd;
+    padding: 2px 6px;
+    font-family: inherit;
+    font-size: 10px;
+  }
+  .api-bar input { width: 170px; }
+  .api-bar select { cursor: pointer; }
+  .api-bar button {
+    background: transparent;
+    border: 1px solid #444;
+    color: #ccc;
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-family: inherit;
+    font-size: 10px;
+    cursor: pointer;
+  }
+  .api-bar .sep { opacity: .25; }
+
+  /* ====== TOTEM ====== */
+  .totem-frame {
+    width: var(--totem-w);
+    height: var(--totem-h);
+    background: #222228;
+    border-radius: 36px;
+    padding: 10px;
+    box-shadow:
+      0 0 0 1px #333,
+      0 30px 80px rgba(0,0,0,.8),
+      inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .totem-screen {
+    width: 100%; height: 100%;
+    border-radius: 28px;
+    background: var(--surface);
+    overflow: hidden;
+    position: relative;
+    color: var(--text);
+  }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid #f0f0f0;
+    background: var(--surface);
+  }
+  .topbar .logo-wrap {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .topbar .logo-mark {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: var(--primary);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    overflow: hidden;
+  }
+  .topbar .logo-mark img {
+    width: 100%; height: 100%;
+    object-fit: contain;
+  }
+  .topbar .logo-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--secondary);
+    letter-spacing: 0.5px;
+  }
+  .topbar .time {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .screen-content {
+    height: calc(100% - 50px);
+    position: relative;
+  }
+  .screen {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    animation: fadeIn .3s ease;
+    background: var(--surface);
+  }
+  .screen.active { display: flex; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== SPLASH ===== */
+  #s-splash {
+    background:
+      linear-gradient(180deg, transparent 40%, rgba(0,0,0,.7) 100%),
+      var(--secondary);
+    background-size: cover;
+    background-position: center;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+    cursor: pointer;
+    padding: 30px;
+    position: relative;
+  }
+  #s-splash::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(160deg, var(--secondary) 0%, color-mix(in srgb, var(--primary) 50%, var(--secondary)) 100%);
+    z-index: 0;
+  }
+  #s-splash.has-image::before {
+    background: rgba(0,0,0,.45);
+  }
+  #s-splash > * { position: relative; z-index: 1; }
+  #s-splash .splash-icon {
+    width: 80px; height: 80px;
+    border-radius: 24px;
+    background: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    color: #fff;
+    margin-bottom: auto;
+    margin-top: 30px;
+    box-shadow: 0 0 40px color-mix(in srgb, var(--primary) 40%, transparent);
+    animation: pulse 2.4s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50%     { transform: scale(1.05); }
+  }
+  #s-splash h1 {
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.2;
+    white-space: pre-line;
+  }
+  #s-splash .subtitle {
+    color: rgba(255,255,255,.7);
+    font-size: 12px;
+    text-align: center;
+    max-width: 260px;
+    line-height: 1.5;
+  }
+  #s-splash .start-btn {
+    margin-top: 12px;
+    background: #fff;
+    color: var(--secondary);
+    border: none;
+    padding: 14px 40px;
+    border-radius: 999px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+    transition: transform .15s;
+  }
+  #s-splash .start-btn:hover { transform: translateY(-2px); }
+
+  /* ===== INFO HOTEL ===== */
+  #s-info { padding: 0; }
+  .info-hero {
+    height: 200px;
+    background:
+      linear-gradient(135deg, var(--primary), var(--secondary));
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    display: flex; align-items: flex-end;
+    padding: 20px;
+  }
+  .info-hero.has-image::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,.7) 100%);
+  }
+  .info-hero h2 {
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+    position: relative;
+    text-shadow: 0 2px 12px rgba(0,0,0,.4);
+  }
+  .info-body {
+    flex: 1;
+    padding: 20px 20px 0;
+    overflow-y: auto;
+  }
+  .info-body p {
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  .info-features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .feature-chip {
+    background: var(--soft);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .feature-chip .dot-mini {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--primary);
+    flex-shrink: 0;
+  }
+
+  /* ===== HEAD BLOCK ===== */
+  .head-block {
+    padding: 24px 20px 14px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .head-block h2 { font-size: 19px; font-weight: 700; color: var(--secondary); }
+  .head-block p  { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+  /* ===== IDIOMA ===== */
+  .idioma-list { padding: 12px 20px; flex: 1; overflow-y: auto; }
+  .idioma-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    border-radius: 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    border: 2px solid transparent;
+    background: var(--soft);
+  }
+  .idioma-item.sel {
+    background: color-mix(in srgb, var(--primary) 10%, white);
+    border-color: var(--primary);
+    font-weight: 600;
+  }
+  .idioma-item .name {
+    font-size: 14px;
+    color: var(--text);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .idioma-item .name .flag { font-size: 22px; }
+  .idioma-item .check {
+    color: var(--primary);
+    font-size: 18px;
+    opacity: 0;
+    font-weight: 700;
+  }
+  .idioma-item.sel .check { opacity: 1; }
+
+  /* ===== HOME ===== */
+  .home-btns {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+  }
+  .big-btn {
+    border-radius: 18px;
+    padding: 22px 20px;
+    cursor: pointer;
+    border: none;
+    text-align: left;
+    transition: transform .12s, box-shadow .12s;
+    font-family: 'Outfit', sans-serif;
+    color: #fff;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .big-btn:active { transform: scale(.97); }
+  .big-btn.checkin {
+    background: var(--primary);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--primary) 35%, transparent);
+  }
+  .big-btn.checkout {
+    background: var(--secondary);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--secondary) 35%, transparent);
+  }
+  .big-btn .btn-icon { font-size: 28px; margin-bottom: 8px; display: block; }
+  .big-btn .btn-title { font-size: 17px; font-weight: 700; display: block; }
+  .big-btn .btn-sub {
+    font-size: 12px;
+    display: block;
+    margin-top: 4px;
+    opacity: .8;
+  }
+
+  /* ===== IDENTIFICAÇÃO ===== */
+  .ident-body { padding: 18px 20px; flex: 1; overflow-y: auto; }
+  .field-group { margin-bottom: 14px; }
+  .field-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 6px;
+  }
+  .field-group input {
+    width: 100%;
+    background: var(--soft);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-family: 'Outfit', sans-serif;
+    color: var(--text);
+    transition: border-color .15s, background .15s;
+  }
+  .field-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #fff;
+  }
+  .field-group input::placeholder { color: #c0c8d0; }
+  .err-msg {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    margin-top: 10px;
+    display: none;
+  }
+  .err-msg.show { display: block; }
+  .hint-box {
+    background: #eff6ff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 11px;
+    color: #1e40af;
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+  .hint-box code {
+    background: rgba(30,64,175,.1);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+  }
+
+  /* ===== AGUARDE ===== */
+  .aguarde-wrap {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 18px;
+    padding: 20px;
+  }
+  .aguarde-anim {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    border: 4px solid var(--soft);
+    border-top-color: var(--primary);
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .aguarde-wrap h2 {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--secondary);
+    text-align: center;
+  }
+  .aguarde-wrap p {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    max-width: 260px;
+    line-height: 1.5;
+  }
+
+  /* ===== RESUMO RESERVA ===== */
+  .resumo-body { padding: 18px 20px; flex: 1; overflow-y: auto; }
+  .resumo-greeting {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--secondary);
+    margin-bottom: 4px;
+  }
+  .resumo-greeting span { color: var(--primary); }
+  .info-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row .label { color: var(--muted); }
+  .info-row .val {
+    font-weight: 600;
+    color: var(--text);
+    text-align: right;
+  }
+  .termo-box {
+    background: var(--soft);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 14px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #475569;
+  }
+  .termo-check {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 0 0;
+    cursor: pointer;
+  }
+  .termo-check input {
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: var(--primary);
+  }
+  .termo-check label {
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+    line-height: 1.5;
+    flex: 1;
+  }
+
+  /* ===== EXTRATO ===== */
+  .extrato-table {
+    margin-top: 12px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--soft);
+  }
+  .extrato-head, .extrato-row {
+    display: grid;
+    grid-template-columns: 1.4fr .6fr .8fr;
+    gap: 8px;
+    padding: 10px 12px;
+    font-size: 11px;
+    align-items: center;
+  }
+  .extrato-head {
+    background: var(--secondary);
+    color: #fff;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    font-size: 10px;
+  }
+  .extrato-row { border-bottom: 1px solid #fff; }
+  .extrato-row:last-child { border-bottom: none; }
+  .extrato-row .desc {
+    font-weight: 500;
+    color: var(--text);
+  }
+  .extrato-row .desc small {
+    display: block;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 400;
+    margin-top: 1px;
+  }
+  .extrato-row .val {
+    text-align: right;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+  }
+  .extrato-row .qty {
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .total-box {
+    background: color-mix(in srgb, var(--primary) 10%, white);
+    border: 2px solid var(--primary);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .total-box .t-label {
+    font-size: 12px;
+    color: var(--secondary);
+    font-weight: 500;
+  }
+  .total-box .t-val {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: 'Space Mono', monospace;
+  }
+  .aviso {
+    background: #fef3c7;
+    color: #78350f;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    margin-top: 12px;
+  }
+
+  /* ===== PAGAMENTO ===== */
+  .pag-options {
+    padding: 14px 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .pag-opt {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    border-radius: 16px;
+    border: 2px solid #e2e8f0;
+    cursor: pointer;
+    gap: 14px;
+    transition: border-color .15s, background .15s;
+    background: var(--surface);
+  }
+  .pag-opt:hover {
+    background: var(--soft);
+    border-color: var(--primary);
+  }
+  .pag-opt .p-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--primary) 12%, white);
+    color: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .pag-opt .p-text .p-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .pag-opt .p-text .p-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .valor-display {
+    background: var(--secondary);
+    color: #fff;
+    padding: 16px 20px;
+    border-radius: 14px;
+    margin: 14px 20px;
+    text-align: center;
+  }
+  .valor-display .label {
+    font-size: 11px;
+    opacity: .7;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .valor-display .val {
+    font-size: 26px;
+    font-weight: 700;
+    font-family: 'Space Mono', monospace;
+    margin-top: 2px;
+  }
+
+  /* ===== CARTÃO ===== */
+  .card-machine {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px;
+    padding: 20px;
+    text-align: center;
+  }
+  .card-icon {
+    font-size: 70px;
+    animation: tap 1.5s infinite;
+  }
+  @keyframes tap {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-10px); }
+  }
+  .card-machine h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--secondary);
+  }
+  .card-machine p {
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 240px;
+    line-height: 1.5;
+  }
+
+  /* ===== QR PIX ===== */
+  .qr-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 20px;
+  }
+  .qr-box {
+    width: 180px; height: 180px;
+    background: #fff;
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    margin: 12px auto 8px;
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    grid-template-rows: repeat(13, 1fr);
+    gap: 1px;
+    border: 1px solid #e2e8f0;
+  }
+  .qr-cell { background: var(--secondary); border-radius: 1px; }
+  .qr-cell.w { background: transparent; }
+  .pix-info { text-align: center; margin-top: 4px; }
+  .pix-info h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--secondary);
+  }
+  .pix-info p {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .pix-badge {
+    display: inline-block;
+    background: #00c2ff;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 6px;
+    letter-spacing: .5px;
+  }
+
+  /* ===== SUCESSO ===== */
+  .sucesso-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 20px;
+    text-align: center;
+  }
+  .sucesso-circle {
+    width: 96px; height: 96px;
+    border-radius: 50%;
+    background: var(--success);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 50px;
+    box-shadow: 0 0 40px color-mix(in srgb, var(--success) 35%, transparent);
+    animation: pop .4s cubic-bezier(.17,.67,.35,1.3);
+  }
+  @keyframes pop {
+    from { transform: scale(0); }
+    to   { transform: scale(1); }
+  }
+  .sucesso-wrap h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--secondary);
+    line-height: 1.3;
+  }
+  .sucesso-wrap p {
+    font-size: 13px;
+    color: var(--muted);
+    max-width: 280px;
+    line-height: 1.5;
+  }
+  .quarto-card {
+    background: var(--soft);
+    border-radius: 14px;
+    padding: 12px 22px;
+    text-align: center;
+    margin-top: 4px;
+  }
+  .quarto-card .k-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .quarto-card .k-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-top: 2px;
+  }
+
+  /* ===== BOTTOM BAR ===== */
+  .bottombar {
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    border-top: 1px solid #f1f5f9;
+    background: var(--surface);
+  }
+  .btn-back {
+    padding: 11px 18px;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    background: #fff;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn-back:hover {
+    border-color: #cbd5e1;
+    color: var(--text);
+  }
+  .btn-next {
+    flex: 1;
+    padding: 12px 18px;
+    border-radius: 12px;
+    border: none;
+    background: var(--primary);
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: all .15s;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+  .btn-next:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .btn-next:not(:disabled):hover { transform: translateY(-1px); }
+
+  /* ===== DEBUG ===== */
+  .debug-panel {
+    margin-top: 20px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    padding: 14px 16px;
+    max-width: var(--totem-w);
+    width: 100%;
+  }
+  .debug-panel h3 {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: #888;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .debug-data {
+    background: rgba(0,0,0,.3);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: #aaa;
+    line-height: 1.6;
+    margin-bottom: 10px;
+    word-break: break-all;
+  }
+  .debug-data b { color: #3ddc84; }
+  .debug-nav {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .fnav {
+    padding: 5px 10px;
+    border-radius: 16px;
+    border: 1px solid #333;
+    color: #888;
+    font-size: 10px;
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    transition: all .15s;
+    background: transparent;
+  }
+  .fnav:hover { border-color: var(--primary); color: var(--primary); }
+  .fnav.active {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(26,86,219,.1);
+  }
+</style>
+</head>
+<body>
+
+<!-- Status da API -->
+<div class="api-bar" id="api-bar">
+  <span class="dot"></span>
+  <span id="api-status">Conectando à API...</span>
+  <span class="sep">|</span>
+  <span>base_url</span>
+  <input type="text" id="api-url" value="http://localhost:8080" />
+  <span class="sep">|</span>
+  <span>X-Hotel-ID</span>
+  <select id="hotel-id">
+    <option value="1">1 — Grand Palace</option>
+    <option value="2">2 — Vista Verde</option>
+  </select>
+  <button onclick="initHotel()" title="Recarregar">↻</button>
+</div>
+
+<!-- Totem -->
+<div class="totem-frame">
+  <div class="totem-screen">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="logo-wrap">
+        <div class="logo-mark" id="logo-mark">G</div>
+        <div class="logo-text" id="logo-text">HOTEL HUB</div>
+      </div>
+      <div class="time" id="clock">00:00</div>
+    </div>
+
+    <div class="screen-content">
+
+      <!-- 1. SPLASH -->
+      <div class="screen active" id="s-splash">
+        <div class="splash-icon">🏨</div>
+        <h1 id="splash-title">Bem-vindo</h1>
+        <p class="subtitle" id="splash-sub">Toque para iniciar seu autoatendimento</p>
+        <button class="start-btn" onclick="go('s-info')" data-t="btn_iniciar">Iniciar</button>
+      </div>
+
+      <!-- 2. INFO HOTEL / LAZER -->
+      <div class="screen" id="s-info">
+        <div class="info-hero" id="info-hero">
+          <h2>Conheça nosso<br>espaço</h2>
+        </div>
+        <div class="info-body">
+          <p id="info-text">Desfrute de nossas instalações exclusivas durante a sua estadia.</p>
+          <div class="info-features">
+            <div class="feature-chip"><span class="dot-mini"></span>Piscina</div>
+            <div class="feature-chip"><span class="dot-mini"></span>Spa & Sauna</div>
+            <div class="feature-chip"><span class="dot-mini"></span>Academia</div>
+            <div class="feature-chip"><span class="dot-mini"></span>Restaurante</div>
+          </div>
+        </div>
+        <div class="bottombar">
+          <button class="btn-back" onclick="go('s-splash')" data-t="btn_voltar">Voltar</button>
+          <button class="btn-next" onclick="go('s-idioma')" data-t="btn_continuar">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 3. IDIOMA -->
+      <div class="screen" id="s-idioma">
+        <div class="head-block">
+          <h2>Seleção de idioma</h2>
+          <p>Select your preferred language</p>
+        </div>
+        <div class="idioma-list" id="idioma-list"></div>
+        <div class="bottombar">
+          <button class="btn-back" onclick="go('s-info')" data-t="btn_voltar">Voltar</button>
+          <button class="btn-next" onclick="confirmIdioma()" data-t="btn_continuar">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 4. HOME -->
+      <div class="screen" id="s-home">
+        <div class="head-block">
+          <h2>Como podemos ajudar?</h2>
+          <p>Escolha uma das opções abaixo</p>
+        </div>
+        <div class="home-btns">
+          <button class="big-btn checkin" onclick="startFlow('checkin')">
+            <span class="btn-icon">🛎️</span>
+            <span class="btn-title" data-t="btn_realizar_checkin">Realizar Check-in</span>
+            <span class="btn-sub">Entrar no seu quarto</span>
+          </button>
+          <button class="big-btn checkout" onclick="startFlow('checkout')">
+            <span class="btn-icon">🧳</span>
+            <span class="btn-title" data-t="btn_realizar_checkout">Realizar Check-out</span>
+            <span class="btn-sub">Finalizar estadia e pagar</span>
+          </button>
+        </div>
+        <div class="bottombar">
+          <button class="btn-back" onclick="go('s-idioma')" data-t="btn_voltar">Voltar</button>
+        </div>
+      </div>
+
+      <!-- 5. IDENTIFICAÇÃO -->
+      <div class="screen" id="s-ident">
+        <div class="head-block">
+          <h2 id="ident-title">Identificação</h2>
+          <p id="ident-sub">Digite os dados da sua reserva</p>
+        </div>
+        <div class="ident-body">
+          <div class="field-group">
+            <label data-t="label_codigo_reserva">Código da Reserva</label>
+            <input type="text" id="i-codigo" placeholder="Ex. GP-2025-001" autocomplete="off">
+          </div>
+          <div class="field-group">
+            <label data-t="label_documento">CPF ou Passaporte</label>
+            <input type="text" id="i-doc" placeholder="Ex. 345.678.901-23" autocomplete="off">
+          </div>
+          <div class="err-msg" id="ident-err"></div>
+          <div class="hint-box">
+            <b>💡 Dados de teste:</b><br>
+            Check-in: <code>GP-2025-003</code> · <code>567.890.123-45</code><br>
+            Check-out: <code>GP-2025-001</code> · <code>345.678.901-23</code>
+          </div>
+        </div>
+        <div class="bottombar">
+          <button class="btn-back" onclick="go('s-home')" data-t="btn_voltar">Voltar</button>
+          <button class="btn-next" onclick="buscarReserva()" data-t="btn_continuar">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 6. AGUARDE (busca) -->
+      <div class="screen" id="s-aguarde-busca">
+        <div class="aguarde-wrap">
+          <div class="aguarde-anim"></div>
+          <h2 data-t="txt_titulo_aguarde">Aguarde...</h2>
+          <p data-t="txt_desc_velocidade_luz">Estamos buscando suas informações na velocidade da luz...</p>
+        </div>
+      </div>
+
+      <!-- 7. RESUMO CHECK-IN -->
+      <div class="screen" id="s-resumo-checkin">
+        <div class="head-block">
+          <div class="resumo-greeting" id="r-greeting"><span>Olá!</span></div>
+          <p data-t="txt_prazer_receber">é um prazer recebermos você em nosso espaço!</p>
+        </div>
+        <div class="resumo-body">
+          <p style="font-size:12px;color:#475569;margin-bottom:10px;line-height:1.5" data-t="txt_verifique_detalhes">Verifique abaixo os detalhes da sua reserva:</p>
+          <div class="info-row"><span class="label" data-t="label_acomodacao">Acomodação</span><span class="val" id="r-acomod">—</span></div>
+          <div class="info-row"><span class="label" data-t="label_qtd_pessoas">Hóspedes</span><span class="val" id="r-pessoas">—</span></div>
+          <div class="info-row"><span class="label" data-t="label_checkin">Check-in</span><span class="val" id="r-checkin">—</span></div>
+          <div class="info-row"><span class="label" data-t="label_checkout">Check-out</span><span class="val" id="r-checkout">—</span></div>
+          <div class="termo-box" data-t="txt_bloco_termo_seguranca">
+            Para sua segurança e de todos os hóspedes, solicitamos que leia e aceite o Termo de Consentimento e Regulamento Interno antes de prosseguir. Suas informações são tratadas conforme a LGPD.
+          </div>
+          <div class="termo-check">
+            <input type="checkbox" id="termo-check" onchange="toggleTermo()">
+            <label for="termo-check" data-t="txt_checkbox_aceite">Li e aceito os termos de consentimento.</label>
+          </div>
+        </div>
+        <div class="bottombar">
+          <button class="btn-back" onclick="go('s-ident')" data-t="btn_voltar">Voltar</button>
+          <button class="btn-next" id="btn-efetivar-checkin" disabled onclick="efetivarCheckin()" data-t="btn_continuar">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 8. CODIFICANDO -->
+      <div class="screen" id="s-codificando">
+        <div class="aguarde-wrap">
+          <div class="aguarde-anim"></div>
+          <h2 data-t="txt_titulo_codificando_cartao">Codificando seu Cartão-Chave...</h2>
+          <p data-t="txt_desc_configurando_cartao">Estamos configurando seu cartão para uma estadia impecável.</p>
+        </div>
+      </div>
+
+      <!-- 9. SUCESSO CHECK-IN -->
+      <div class="screen" id="s-sucesso-checkin">
+        <div class="sucesso-wrap">
+          <div class="sucesso-circle">✓</div>
+          <h2 data-t="txt_titulo_sucesso_checkin">Check-in realizado com sucesso!</h2>
+          <p data-t="txt_desc_sucesso_checkin">Retire seu cartão e boa estadia.</p>
+          <div class="quarto-card" id="quarto-card-wrap">
+            <div class="k-label">Quarto</div>
+            <div class="k-num" id="sucesso-quarto">—</div>
+          </div>
+        </div>
+        <div class="bottombar">
+          <button class="btn-next" style="flex:1" onclick="resetTotem()">Finalizar</button>
+        </div>
+      </div>
+
+      <!-- 10. RESUMO CHECK-OUT -->
+      <div class="screen" id="s-resumo-checkout">
+        <div class="head-block">
+          <h2 data-t="txt_titulo_checkout">Checkout</h2>
+          <p data-t="txt_desc_revise_lancamentos">Revise seus lançamentos antes de finalizar.</p>
+        </div>
+        <div class="resumo-body">
+          <div class="resumo-greeting" id="c-greeting" style="font-size:14px;margin-bottom:10px"></div>
+          <div class="extrato-table">
+            <div class="extrato-head">
+              <span data-t="label_coluna_descricao">Descrição</span>
+              <span style="text-align:center">Qtd</span>
+              <span style="text-align:right" data-t="label_coluna_total">Total</span>
+            </div>
+            <div id="extrato-rows"></div>
+          </div>
+          <div class="total-box">
+            <span class="t-label" data-t="label_total_a_pagar">Valor total a pagar</span>
+            <span class="t-val" id="c-total">R$ 0,00</span>
+          </div>
+          <div class="aviso" data-t="txt_aviso_divergencia">
+            Dúvidas sobre o consumo? Em caso de divergência, dirija-se à recepção.
+          </div>
+        </div>
+        <div class="bottombar">
+          <button class="btn-back" onclick="go('s-ident')" data-t="btn_voltar">Voltar</button>
+          <button class="btn-next" onclick="go('s-pagamento')" data-t="btn_continuar">Pagar</button>
+        </div>
+      </div>
+
+      <!-- 11. PAGAMENTO -->
+      <div class="screen" id="s-pagamento">
+        <div class="head-block">
+          <h2 data-t="txt_titulo_pagamento">Pagamento</h2>
+          <p>Escolha como deseja pagar</p>
+        </div>
+        <div class="valor-display">
+          <div class="label" data-t="label_total_a_pagar">Valor total a pagar</div>
+          <div class="val" id="p-valor">R$ 0,00</div>
+        </div>
+        <div class="pag-options">
+          <div class="pag-opt" onclick="selecionarPagto('CARTAO_CREDITO')">
+            <div class="p-icon">💳</div>
+            <div class="p-text">
+              <div class="p-title" data-t="btn_cartao_credito_debito">Cartão Crédito/Débito</div>
+              <div class="p-sub">Insira ou aproxime na maquininha</div>
+            </div>
+          </div>
+          <div class="pag-opt" onclick="selecionarPagto('PIX')">
+            <div class="p-icon">📱</div>
+            <div class="p-text">
+              <div class="p-title" data-t="btn_gerar_pix">Gerar QrCode Pix</div>
+              <div class="p-sub">Pagamento instantâneo</div>
+            </div>
+          </div>
+        </div>
+        <div class="bottombar">
+          <button class="btn-back" onclick="go('s-resumo-checkout')" data-t="btn_voltar">Voltar</button>
+        </div>
+      </div>
+
+      <!-- 12. CARTÃO -->
+      <div class="screen" id="s-cartao">
+        <div class="head-block">
+          <h2 data-t="txt_titulo_insira_cartao">Insira ou Aproxime o cartão</h2>
+          <p data-t="txt_desc_insira_cartao">E siga as instruções no visor da maquininha</p>
+        </div>
+        <div class="card-machine">
+          <div class="card-icon">💳</div>
+          <p data-t="txt_desc_aguardando_pagamento">Aguardando pagamento...</p>
+          <button class="btn-next" style="padding:10px 24px" onclick="finalizarCheckout()">Simular pagamento</button>
+        </div>
+        <div class="bottombar">
+          <button class="btn-back" onclick="go('s-pagamento')" data-t="btn_voltar">Voltar</button>
+        </div>
+      </div>
+
+      <!-- 13. PIX -->
+      <div class="screen" id="s-pix">
+        <div class="head-block">
+          <h2 data-t="txt_titulo_escaneie_pix">Escaneie o QRCode</h2>
+          <p data-t="txt_desc_escaneie_pix">E siga as instruções no seu celular</p>
+        </div>
+        <div class="qr-wrap">
+          <div class="qr-box" id="qr-box"></div>
+          <div class="pix-info">
+            <h2 id="pix-valor">R$ 0,00</h2>
+            <p data-t="txt_desc_aguardando_pagamento">Aguardando pagamento...</p>
+            <span class="pix-badge">PIX</span>
+          </div>
+          <button class="btn-next" style="padding:10px 24px;margin-top:10px" onclick="finalizarCheckout()">Simular pagamento</button>
+        </div>
+        <div class="bottombar">
+          <button class="btn-back" onclick="go('s-pagamento')" data-t="btn_voltar">Voltar</button>
+        </div>
+      </div>
+
+      <!-- 14. AGUARDE PAGAMENTO -->
+      <div class="screen" id="s-aguarde-pagto">
+        <div class="aguarde-wrap">
+          <div class="aguarde-anim"></div>
+          <h2 data-t="txt_titulo_aguarde">Aguarde...</h2>
+          <p data-t="txt_desc_aguardando_pagamento">Aguardando confirmação do pagamento...</p>
+        </div>
+      </div>
+
+      <!-- 15. SUCESSO CHECK-OUT -->
+      <div class="screen" id="s-sucesso-checkout">
+        <div class="sucesso-wrap">
+          <div class="sucesso-circle">✓</div>
+          <h2 data-t="txt_titulo_aprovado">Pagamento aprovado!!!</h2>
+          <p data-t="txt_desc_aprovado_compartimento">Foi um prazer tê-lo conosco. Seu cartão foi desativado. Por favor, deposite-o no compartimento ao lado. Obrigado!</p>
+        </div>
+        <div class="bottombar">
+          <button class="btn-next" style="flex:1" onclick="resetTotem()">Finalizar</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Debug -->
+<div class="debug-panel">
+  <h3>🛠 Debug / Dev tools</h3>
+  <div class="debug-data" id="debug-data">Hotel: — | Idioma: — | Modo: —</div>
+  <div class="debug-nav">
+    <button class="fnav active" onclick="go('s-splash')">splash</button>
+    <button class="fnav" onclick="go('s-info')">info</button>
+    <button class="fnav" onclick="go('s-idioma')">idioma</button>
+    <button class="fnav" onclick="go('s-home')">home</button>
+    <button class="fnav" onclick="go('s-ident')">ident</button>
+    <button class="fnav" onclick="go('s-resumo-checkin')">resumo-ci</button>
+    <button class="fnav" onclick="go('s-sucesso-checkin')">ok-ci</button>
+    <button class="fnav" onclick="go('s-resumo-checkout')">resumo-co</button>
+    <button class="fnav" onclick="go('s-pagamento')">pagto</button>
+    <button class="fnav" onclick="go('s-pix')">pix</button>
+    <button class="fnav" onclick="go('s-sucesso-checkout')">ok-co</button>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   FlexMedia Hotel Hub — Cliente Totem
+   Consome a API real (Spring Boot/H2) com fallback MOCK quando offline.
+   ========================================================================== */
+
+const state = {
+  baseUrl: 'http://localhost:8080',
+  hotelId: 1,
+  idiomaIso: 'pt',
+  online: false,
+  dicionario: {},
+  whiteLabel: null,
+  flow: null,
+  reservaAtual: null,
+  totalPagamento: 0,
+  metodoPagamento: null
+};
+
+/* === Helper: lê propriedade tentando vários nomes (defensivo) === */
+function pick(obj, ...keys) {
+  if (!obj) return undefined;
+  for (const k of keys) {
+    if (obj[k] !== undefined && obj[k] !== null) return obj[k];
+  }
+  return undefined;
+}
+
+/* === Mock baseado em data.sql === */
+const MOCK = {
+  hoteis: {
+    1: {
+      corPrimariaHex: '#1a56db',
+      corSecundariaHex: '#1e293b',
+      nome: 'Grand Palace Hotel',
+      infoHotelTexto: 'O Grand Palace oferece experiência de alto padrão no coração da cidade, com quartos sofisticados e atendimento 24h.',
+      idiomas: [
+        { codigoIso: 'pt', nomeIdioma: 'Português' },
+        { codigoIso: 'en', nomeIdioma: 'English' }
+      ]
+    },
+    2: {
+      corPrimariaHex: '#16a34a',
+      corSecundariaHex: '#14532d',
+      nome: 'Pousada Vista Verde',
+      infoHotelTexto: 'A Pousada Vista Verde é um refúgio tranquilo cercado de natureza, perfeito para descanso e lazer em família.',
+      idiomas: [
+        { codigoIso: 'pt', nomeIdioma: 'Português' },
+        { codigoIso: 'en', nomeIdioma: 'English' }
+      ]
+    }
+  },
+  // mapa de busca por (codigo|documento) → reserva
+  reservas: {
+    'GP-2025-003|567.890.123-45': {
+      id: 3,
+      codigoReserva: 'GP-2025-003',
+      nomeHospede: 'Mariana Ferreira Costa',
+      documentoCpfPassaporte: '567.890.123-45',
+      quantidadePessoas: 3,
+      dataEntradaPrevista: '2025-07-20T14:00:00',
+      dataSaidaPrevista: '2025-07-25T12:00:00',
+      acomodacao: 'A definir no check-in',
+      statusReserva: 'PENDENTE',
+      quartoId: null
+    },
+    'GP-2025-001|345.678.901-23': {
+      id: 1,
+      codigoReserva: 'GP-2025-001',
+      nomeHospede: 'Ana Beatriz Souza',
+      documentoCpfPassaporte: '345.678.901-23',
+      quantidadePessoas: 2,
+      dataEntradaPrevista: '2025-07-10T14:00:00',
+      dataSaidaPrevista: '2025-07-15T12:00:00',
+      acomodacao: 'Quarto 102 — Casal',
+      statusReserva: 'RESERVA_ATIVA',
+      quartoId: 2,
+      numeroQuarto: '102',
+      consumos: [
+        { tipoConsumo: 'DIARIA',       descricaoItem: '5 Diárias — Quarto 102',  quantidade: 5, precoUnitarioMomento: 320.00, valorTotalItem: 1600.00 },
+        { tipoConsumo: 'FRIGOBAR',     descricaoItem: 'Água Mineral 500ml',       quantidade: 3, precoUnitarioMomento:   8.00, valorTotalItem:   24.00 },
+        { tipoConsumo: 'FRIGOBAR',     descricaoItem: 'Vinho Tinto 375ml',        quantidade: 1, precoUnitarioMomento:  75.00, valorTotalItem:   75.00 },
+        { tipoConsumo: 'ROOM_SERVICE', descricaoItem: 'Café da Manhã no Quarto',  quantidade: 2, precoUnitarioMomento:  45.00, valorTotalItem:   90.00 }
+      ],
+      valorTotal: 1789.00
+    },
+    'VV-2025-001|AB123456': {
+      id: 4,
+      codigoReserva: 'VV-2025-001',
+      nomeHospede: 'Roberto Alves Nunes',
+      documentoCpfPassaporte: 'AB123456',
+      quantidadePessoas: 2,
+      dataEntradaPrevista: '2025-07-08T14:00:00',
+      dataSaidaPrevista: '2025-07-14T12:00:00',
+      acomodacao: 'Chalé 02 — Família',
+      statusReserva: 'RESERVA_ATIVA',
+      quartoId: 6,
+      numeroQuarto: 'Chalé 02',
+      consumos: [
+        { tipoConsumo: 'DIARIA',   descricaoItem: '6 Diárias — Chalé 02', quantidade: 6, precoUnitarioMomento: 250.00, valorTotalItem: 1500.00 },
+        { tipoConsumo: 'FRIGOBAR', descricaoItem: 'Suco de Laranja',      quantidade: 2, precoUnitarioMomento:  14.00, valorTotalItem:   28.00 }
+      ],
+      valorTotal: 1528.00
+    }
+  },
+  dicionarios: {
+    'pt': {
+      btn_iniciar:'Iniciar', btn_continuar:'Continuar', btn_voltar:'Voltar',
+      btn_realizar_checkin:'Realizar Check-in', btn_realizar_checkout:'Realizar Check-out',
+      label_documento:'CPF ou Passaporte', label_codigo_reserva:'Código da Reserva',
+      label_acomodacao:'Acomodação', label_qtd_pessoas:'Hóspedes',
+      label_checkin:'Check-in', label_checkout:'Check-out',
+      label_coluna_descricao:'Descrição', label_coluna_total:'Total',
+      label_total_a_pagar:'Valor total a pagar',
+      txt_titulo_aguarde:'Aguarde...',
+      txt_desc_velocidade_luz:'Estamos buscando suas informações na velocidade da luz...',
+      txt_titulo_codificando_cartao:'Codificando seu Cartão-Chave...',
+      txt_desc_configurando_cartao:'Estamos configurando seu cartão para uma estadia impecável.',
+      txt_desc_aguardando_pagamento:'Aguardando confirmação do pagamento...',
+      txt_prazer_receber:'é um prazer recebermos você em nosso espaço!',
+      txt_verifique_detalhes:'Verifique abaixo os detalhes da sua reserva:',
+      txt_bloco_termo_seguranca:'Para sua segurança e de todos os hóspedes, solicitamos que leia e aceite o Termo de Consentimento e Regulamento Interno antes de prosseguir. Suas informações são tratadas conforme a LGPD.',
+      txt_checkbox_aceite:'Li e aceito os termos de consentimento.',
+      txt_titulo_sucesso_checkin:'Check-in realizado com sucesso!',
+      txt_desc_sucesso_checkin:'Retire seu cartão e boa estadia.',
+      txt_titulo_checkout:'Checkout',
+      txt_desc_revise_lancamentos:'Revise seus lançamentos antes de finalizar.',
+      txt_aviso_divergencia:'Dúvidas sobre o consumo? Em caso de divergência, dirija-se à recepção.',
+      txt_titulo_pagamento:'Pagamento',
+      btn_cartao_credito_debito:'Cartão Crédito/Débito',
+      btn_gerar_pix:'Gerar QrCode Pix',
+      txt_titulo_insira_cartao:'Insira ou Aproxime o cartão',
+      txt_desc_insira_cartao:'E siga as instruções no visor da maquininha',
+      txt_titulo_escaneie_pix:'Escaneie o QRCode',
+      txt_desc_escaneie_pix:'E siga as instruções no seu celular',
+      txt_titulo_aprovado:'Pagamento aprovado!!!',
+      txt_desc_aprovado_compartimento:'Foi um prazer tê-lo conosco. Seu cartão foi desativado. Por favor, deposite-o no compartimento ao lado. Obrigado!'
+    },
+    'en': {
+      btn_iniciar:'Start', btn_continuar:'Continue', btn_voltar:'Go Back',
+      btn_realizar_checkin:'Perform Check-in', btn_realizar_checkout:'Perform Check-out',
+      label_documento:'ID or Passport', label_codigo_reserva:'Booking Code',
+      label_acomodacao:'Accommodation', label_qtd_pessoas:'Guests',
+      label_checkin:'Check-in', label_checkout:'Check-out',
+      label_coluna_descricao:'Description', label_coluna_total:'Total',
+      label_total_a_pagar:'Total amount due',
+      txt_titulo_aguarde:'Please wait...',
+      txt_desc_velocidade_luz:'We are retrieving your information at the speed of light...',
+      txt_titulo_codificando_cartao:'Encoding your Key Card...',
+      txt_desc_configurando_cartao:'We are setting up your card for a flawless stay.',
+      txt_desc_aguardando_pagamento:'Awaiting payment confirmation...',
+      txt_prazer_receber:'it is a pleasure to welcome you to our space!',
+      txt_verifique_detalhes:'Please review your booking details below:',
+      txt_bloco_termo_seguranca:'For your safety and that of all guests, please read and accept our Consent Terms and House Rules before proceeding.',
+      txt_checkbox_aceite:'I have read and accept the consent terms.',
+      txt_titulo_sucesso_checkin:'Check-in completed successfully!',
+      txt_desc_sucesso_checkin:'Please take your key card and enjoy your stay.',
+      txt_titulo_checkout:'Checkout',
+      txt_desc_revise_lancamentos:'Please review your charges before proceeding.',
+      txt_aviso_divergencia:'Questions about your charges? Please visit the front desk.',
+      txt_titulo_pagamento:'Payment',
+      btn_cartao_credito_debito:'Credit / Debit Card',
+      btn_gerar_pix:'Generate Pix QrCode',
+      txt_titulo_insira_cartao:'Insert or Tap your card',
+      txt_desc_insira_cartao:'And follow the instructions on the card machine display',
+      txt_titulo_escaneie_pix:'Scan the QRCode',
+      txt_desc_escaneie_pix:'And follow the instructions on your mobile phone',
+      txt_titulo_aprovado:'Payment approved!!!',
+      txt_desc_aprovado_compartimento:'It was a pleasure having you with us. Your key card has been deactivated. Please drop it in the slot beside this terminal. Thank you!'
+    }
+  }
+};
+
+/* ==========================================================================
+   API CLIENT
+   ========================================================================== */
+async function apiCall(path, opts = {}) {
+  const url = state.baseUrl.replace(/\/$/, '') + path;
+  const headers = {
+    'X-Hotel-ID': String(state.hotelId),
+    ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+    ...opts.headers
+  };
+  const res = await fetch(url, { ...opts, headers });
+  if (!res.ok) {
+    let msg = 'HTTP ' + res.status;
+    try {
+      const body = await res.json();
+      msg = body.message || body.error || msg;
+    } catch {}
+    throw new Error(msg);
+  }
+  // Algumas rotas podem retornar 200 com body vazio
+  const ct = res.headers.get('content-type') || '';
+  if (ct.includes('application/json')) {
+    return res.json();
+  }
+  return null;
+}
+
+/* ==========================================================================
+   INICIALIZAÇÃO — GET /totem/inicializacao
+   ========================================================================== */
+async function initHotel() {
+  state.baseUrl = document.getElementById('api-url').value.trim();
+  state.hotelId = parseInt(document.getElementById('hotel-id').value);
+  setApiStatus('connecting');
+
+  try {
+    const data = await apiCall(`/totem/inicializacao?idiomaIso=${state.idiomaIso}`);
+    state.online = true;
+    state.whiteLabel = data;
+    state.dicionario = pick(data, 'dicionario', 'dicionarioTotem') || {};
+    aplicarWhiteLabel(data);
+    setApiStatus('online');
+  } catch (e) {
+    console.warn('API offline → modo MOCK', e);
+    state.online = false;
+    const wl = MOCK.hoteis[state.hotelId];
+    state.whiteLabel = wl;
+    state.dicionario = MOCK.dicionarios[state.idiomaIso] || MOCK.dicionarios['pt'];
+    aplicarWhiteLabel(wl);
+    setApiStatus('offline');
+  }
+
+  aplicarDicionario();
+  popularIdiomas();
+  go('s-splash');
+  updateDebug();
+}
+
+function setApiStatus(s) {
+  const bar = document.getElementById('api-bar');
+  bar.classList.remove('online', 'offline');
+  if (s === 'online')     { bar.classList.add('online');  document.getElementById('api-status').textContent = 'API online'; }
+  if (s === 'offline')    { bar.classList.add('offline'); document.getElementById('api-status').textContent = 'API offline · modo mock'; }
+  if (s === 'connecting') { document.getElementById('api-status').textContent = 'Conectando...'; }
+}
+
+/* ==========================================================================
+   WHITE LABEL — aplica cores, logo e splash da API
+   ========================================================================== */
+function aplicarWhiteLabel(wl) {
+  if (!wl) return;
+  const root = document.documentElement;
+
+  const corPrim = pick(wl, 'corPrimariaHex', 'cor_primaria_hex');
+  const corSec  = pick(wl, 'corSecundariaHex', 'cor_secundaria_hex');
+  if (corPrim) root.style.setProperty('--primary', corPrim);
+  if (corSec)  root.style.setProperty('--secondary', corSec);
+
+  /* === Logo (vem como path do servidor) === */
+  const logoPath = pick(wl, 'logoPath', 'logo_path');
+  const logoMark = document.getElementById('logo-mark');
+  if (logoPath) {
+    const url = buildAssetUrl(logoPath);
+    logoMark.innerHTML = `<img src="${url}" alt="logo" onerror="this.parentElement.textContent='${(pick(wl,'nome','nomeEstabelecimento','nome_estabelecimento') || 'H').charAt(0)}'">`;
+  } else {
+    const nome = pick(wl, 'nome', 'nomeEstabelecimento', 'nome_estabelecimento') || 'Hotel';
+    logoMark.textContent = nome.charAt(0).toUpperCase();
+  }
+
+  /* === Nome para o logo-text (opcional, fallback útil) === */
+  const nomeHotel = pick(wl, 'nome', 'nomeEstabelecimento', 'nome_estabelecimento') || 'HOTEL HUB';
+  document.getElementById('logo-text').textContent = nomeHotel.toUpperCase().slice(0, 18);
+
+  /* === Splash (banner) === */
+  const splashPath = pick(wl, 'splashImagePath', 'splash_image_path');
+  const splashEl   = document.getElementById('s-splash');
+  if (splashPath) {
+    const url = buildAssetUrl(splashPath);
+    splashEl.style.backgroundImage = `linear-gradient(180deg, transparent 40%, rgba(0,0,0,.7) 100%), url('${url}')`;
+    splashEl.classList.add('has-image');
+  } else {
+    splashEl.style.backgroundImage = '';
+    splashEl.classList.remove('has-image');
+  }
+
+  /* === Banner info / lazer (opcional — usa infoHotelImagePath se vier) === */
+  const infoImage = pick(wl, 'infoHotelImagePath', 'info_hotel_image_path');
+  const infoHero  = document.getElementById('info-hero');
+  if (infoImage) {
+    const url = buildAssetUrl(infoImage);
+    infoHero.style.backgroundImage = `url('${url}')`;
+    infoHero.style.backgroundSize = 'cover';
+    infoHero.style.backgroundPosition = 'center';
+    infoHero.classList.add('has-image');
+  } else {
+    infoHero.style.backgroundImage = '';
+    infoHero.classList.remove('has-image');
+  }
+
+  /* === Texto institucional === */
+  const infoText = pick(wl, 'infoHotelTexto', 'info_hotel_texto');
+  if (infoText) {
+    document.getElementById('info-text').textContent = infoText;
+  }
+
+  /* === Splash title === */
+  document.getElementById('splash-title').textContent =
+    'Bem-vindo' + (nomeHotel && nomeHotel !== 'HOTEL HUB' ? '\nao ' + nomeHotel : '');
+}
+
+/* Converte caminho relativo do servidor em URL absoluta servível */
+function buildAssetUrl(path) {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path)) return path;
+  const base = state.baseUrl.replace(/\/$/, '');
+  // Os caminhos vêm como "uploads/logos/..." e o Spring serve em "/uploads/..."
+  return base + '/' + path.replace(/^\/+/, '');
+}
+
+function aplicarDicionario() {
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const key = el.getAttribute('data-t');
+    if (state.dicionario[key]) el.textContent = state.dicionario[key];
+  });
+}
+
+/* ==========================================================================
+   IDIOMAS — extrai do dicionário (chaves) ou usa fallback
+   ========================================================================== */
+function popularIdiomas() {
+  const list = document.getElementById('idioma-list');
+  // A doc não define endpoint de idiomas, então usamos fallback estático
+  // que reflete o que está no data.sql para os 2 hotéis mockados.
+  const fallback = state.hotelId === 2
+    ? [{ codigoIso: 'pt', nomeIdioma: 'Português' }, { codigoIso: 'en', nomeIdioma: 'English' }]
+    : [{ codigoIso: 'pt', nomeIdioma: 'Português' }, { codigoIso: 'en', nomeIdioma: 'English' }];
+
+  // Se a API um dia retornar essa lista junto da inicialização, aproveitamos
+  const idiomas = pick(state.whiteLabel, 'idiomasDisponiveis', 'idiomas') || fallback;
+
+  const flags = { pt: '🇧🇷', en: '🇺🇸', es: '🇪🇸', fr: '🇫🇷', zh: '🇨🇳' };
+  list.innerHTML = idiomas.map(i => {
+    const iso  = pick(i, 'codigoIso', 'codigo_iso', 'codigo');
+    const nome = pick(i, 'nomeIdioma', 'nome_idioma', 'nome');
+    return `
+      <div class="idioma-item ${iso === state.idiomaIso ? 'sel' : ''}" data-iso="${iso}" onclick="selIdioma(this)">
+        <span class="name"><span class="flag">${flags[iso] || '🌐'}</span> ${nome}</span>
+        <span class="check">✓</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function selIdioma(el) {
+  document.querySelectorAll('.idioma-item').forEach(i => i.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+async function confirmIdioma() {
+  const sel = document.querySelector('.idioma-item.sel');
+  if (!sel) return;
+  const iso = sel.dataset.iso;
+  if (iso !== state.idiomaIso) {
+    state.idiomaIso = iso;
+    await initHotel();
+  }
+  go('s-home');
+}
+
+/* ==========================================================================
+   FLUXO PRINCIPAL
+   ========================================================================== */
+function startFlow(flow) {
+  state.flow = flow;
+  document.getElementById('i-codigo').value = '';
+  document.getElementById('i-doc').value = '';
+  document.getElementById('ident-err').classList.remove('show');
+  document.getElementById('ident-title').textContent =
+    flow === 'checkin' ? 'Identificação — Check-in' : 'Identificação — Check-out';
+  go('s-ident');
+}
+
+/* === Busca a reserva (GET /totem/reservas/busca ou /totem/extrato) === */
+async function buscarReserva() {
+  const codigo = document.getElementById('i-codigo').value.trim();
+  const doc    = document.getElementById('i-doc').value.trim();
+  const err    = document.getElementById('ident-err');
+
+  if (!codigo || !doc) {
+    err.textContent = 'Preencha o código da reserva e o documento.';
+    err.classList.add('show');
+    return;
+  }
+  err.classList.remove('show');
+  go('s-aguarde-busca');
+
+  try {
+    let reserva;
+    if (state.online) {
+      const endpoint = state.flow === 'checkin' ? 'reservas/busca' : 'extrato';
+      reserva = await apiCall(`/totem/${endpoint}?codigo=${encodeURIComponent(codigo)}&documento=${encodeURIComponent(doc)}`);
+    } else {
+      await sleep(1400);
+      const key = `${codigo}|${doc}`;
+      reserva = MOCK.reservas[key];
+      if (!reserva) throw new Error('Reserva não encontrada. Verifique os dados informados.');
+      const status = pick(reserva, 'statusReserva', 'status_reserva', 'status');
+      if (state.flow === 'checkin'  && status !== 'PENDENTE')       throw new Error('Esta reserva já foi efetivada. Use o fluxo de checkout.');
+      if (state.flow === 'checkout' && status !== 'RESERVA_ATIVA')  throw new Error('Esta reserva não está ativa para checkout.');
+    }
+    state.reservaAtual = reserva;
+    if (state.flow === 'checkin') mostrarResumoCheckin(reserva);
+    else                          mostrarResumoCheckout(reserva);
+  } catch (e) {
+    err.textContent = e.message || 'Erro ao buscar reserva.';
+    err.classList.add('show');
+    go('s-ident');
+  }
+}
+
+/* === Resumo de check-in (defensivo — tenta vários nomes de campo) === */
+function mostrarResumoCheckin(r) {
+  const nome    = pick(r, 'nomeHospede', 'nome_hospede') || '';
+  const primeiroNome = nome.split(' ')[0] || 'Hóspede';
+  const pessoas = pick(r, 'quantidadePessoas', 'quantidade_pessoas') || '—';
+  const entrada = pick(r, 'dataEntradaPrevista', 'data_entrada_prevista');
+  const saida   = pick(r, 'dataSaidaPrevista', 'data_saida_prevista');
+  const acomod  = pick(r, 'acomodacao', 'tipoQuarto', 'tipo_quarto', 'numeroQuarto', 'numero_quarto')
+                || (pessoas !== '—' ? `Reserva para ${pessoas} hóspede(s)` : 'A definir');
+
+  document.getElementById('r-greeting').innerHTML = `<span>Olá, ${primeiroNome}!</span>`;
+  document.getElementById('r-acomod').textContent = acomod;
+  document.getElementById('r-pessoas').textContent = pessoas;
+  document.getElementById('r-checkin').textContent = formatDate(entrada);
+  document.getElementById('r-checkout').textContent = formatDate(saida);
+  document.getElementById('termo-check').checked = false;
+  document.getElementById('btn-efetivar-checkin').disabled = true;
+  go('s-resumo-checkin');
+}
+
+function toggleTermo() {
+  const c = document.getElementById('termo-check').checked;
+  document.getElementById('btn-efetivar-checkin').disabled = !c;
+}
+
+/* === POST /totem/checkin === */
+async function efetivarCheckin() {
+  go('s-codificando');
+  try {
+    const codigo = pick(state.reservaAtual, 'codigoReserva', 'codigo_reserva');
+    const doc    = pick(state.reservaAtual, 'documentoCpfPassaporte', 'documento_cpf_passaporte', 'documento');
+
+    let result = null;
+    if (state.online) {
+      result = await apiCall('/totem/checkin', {
+        method: 'POST',
+        body: JSON.stringify({
+          codigoReserva: codigo,
+          documentoCpfPassaporte: doc,
+          termoConsentimentoAceito: true
+        })
+      });
+
+      // Tenta extrair o quarto da resposta; se não vier, faz um GET de re-busca
+      let numero = pick(result, 'numeroQuarto', 'numero_quarto', 'quarto');
+      if (!numero) {
+        try {
+          const refreshed = await apiCall(`/totem/reservas/busca?codigo=${encodeURIComponent(codigo)}&documento=${encodeURIComponent(doc)}`);
+          numero = pick(refreshed, 'numeroQuarto', 'numero_quarto')
+                || pick(refreshed.quarto || {}, 'numeroQuarto', 'numero_quarto', 'numero');
+        } catch {}
+      }
+      document.getElementById('sucesso-quarto').textContent = numero || '—';
+      document.getElementById('quarto-card-wrap').style.display = numero ? '' : 'none';
+    } else {
+      await sleep(2200);
+      // No mock, escolhe o primeiro quarto LIVRE conhecido do hotel (data.sql)
+      const numero = state.hotelId === 1 ? '101' : 'Chalé 01';
+      document.getElementById('sucesso-quarto').textContent = numero;
+      document.getElementById('quarto-card-wrap').style.display = '';
+    }
+    go('s-sucesso-checkin');
+  } catch (e) {
+    alert('Erro no check-in: ' + e.message);
+    go('s-resumo-checkin');
+  }
+}
+
+/* === Resumo de checkout (extrato) === */
+function mostrarResumoCheckout(r) {
+  const nome = pick(r, 'nomeHospede', 'nome_hospede') || '';
+  const primeiroNome = nome.split(' ')[0] || 'Hóspede';
+  const acomod = pick(r, 'acomodacao', 'numeroQuarto', 'numero_quarto') || '';
+  document.getElementById('c-greeting').innerHTML = `Olá, <b>${primeiroNome}</b>${acomod ? ' — ' + acomod : ''}`;
+
+  // Tenta achar os consumos com vários nomes possíveis
+  const consumos = pick(r, 'consumos', 'consumosEstadia', 'lancamentos', 'itens') || [];
+
+  let total = 0;
+  const rowsHtml = consumos.map(c => {
+    const desc = pick(c, 'descricaoItem', 'descricao_item', 'desc', 'descricao') || 'Item';
+    const tipo = pick(c, 'tipoConsumo', 'tipo_consumo', 'tipo') || '';
+    const qtd  = pick(c, 'quantidade', 'qtd') || 1;
+    const unit = pick(c, 'precoUnitarioMomento', 'preco_unitario_momento', 'precoUnitario', 'unit') || 0;
+    const vt   = pick(c, 'valorTotalItem', 'valor_total_item', 'total') ?? (qtd * unit);
+    total += Number(vt);
+    return `
+      <div class="extrato-row">
+        <div class="desc">${desc}<small>${tipo}</small></div>
+        <div class="qty">×${qtd}</div>
+        <div class="val">R$ ${formatMoney(vt)}</div>
+      </div>
+    `;
+  }).join('') || '<div class="extrato-row"><div class="desc">Sem lançamentos</div></div>';
+
+  // Permite que a API mande um total já calculado (mais confiável)
+  total = pick(r, 'valorTotal', 'valor_total', 'totalGeral', 'total') ?? total;
+
+  document.getElementById('extrato-rows').innerHTML = rowsHtml;
+
+  state.totalPagamento = Number(total);
+  document.getElementById('c-total').textContent  = 'R$ ' + formatMoney(total);
+  document.getElementById('p-valor').textContent  = 'R$ ' + formatMoney(total);
+  document.getElementById('pix-valor').textContent = 'R$ ' + formatMoney(total);
+  go('s-resumo-checkout');
+}
+
+function selecionarPagto(metodo) {
+  state.metodoPagamento = metodo;
+  if (metodo === 'PIX') {
+    gerarQR();
+    go('s-pix');
+  } else {
+    go('s-cartao');
+  }
+}
+
+/* === POST /totem/checkout === */
+async function finalizarCheckout() {
+  go('s-aguarde-pagto');
+  try {
+    if (state.online) {
+      const reservaId = pick(state.reservaAtual, 'id', 'reservaId', 'reserva_id');
+      await apiCall('/totem/checkout', {
+        method: 'POST',
+        body: JSON.stringify({
+          reservaId: reservaId,
+          metodoPagamento: state.metodoPagamento,
+          valorPago: state.totalPagamento
+        })
+      });
+    } else {
+      await sleep(2200);
+    }
+    go('s-sucesso-checkout');
+  } catch (e) {
+    alert('Erro ao processar pagamento: ' + e.message);
+    go('s-pagamento');
+  }
+}
+
+function resetTotem() {
+  state.flow = null;
+  state.reservaAtual = null;
+  state.metodoPagamento = null;
+  go('s-splash');
+}
+
+/* ==========================================================================
+   HELPERS
+   ========================================================================== */
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.fnav').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${id}'`));
+  });
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  try {
+    return new Date(d).toLocaleDateString('pt-BR', {
+      day: '2-digit', month: 'short', year: 'numeric'
+    });
+  } catch {
+    return d;
+  }
+}
+
+function formatMoney(v) {
+  return Number(v || 0).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function gerarQR() {
+  const box = document.getElementById('qr-box');
+  const seed = (pick(state.reservaAtual, 'id') || 1) * 7;
+  let html = '';
+  for (let i = 0; i < 169; i++) {
+    const x = i % 13, y = Math.floor(i / 13);
+    const corner =
+      (x < 3 && y < 3) ||
+      (x > 9 && y < 3) ||
+      (x < 3 && y > 9);
+    const innerCorner =
+      (x === 1 && y === 1) ||
+      (x === 11 && y === 1) ||
+      (x === 1 && y === 11);
+    let dark;
+    if (corner && !innerCorner) {
+      dark = (x === 0 || x === 2 || y === 0 || y === 2 ||
+              (x === 10 || x === 12) || (y === 10 || y === 12));
+      if (x > 9 && y < 3) dark = (x === 10 || x === 12 || y === 0 || y === 2);
+      if (x < 3 && y > 9) dark = (x === 0  || x === 2  || y === 10 || y === 12);
+    } else if (innerCorner) {
+      dark = true;
+    } else {
+      dark = ((i * seed) % 7) < 3;
+    }
+    html += `<div class="qr-cell${dark ? '' : ' w'}"></div>`;
+  }
+  box.innerHTML = html;
+}
+
+function updateDebug() {
+  const nome = pick(state.whiteLabel, 'nome', 'nomeEstabelecimento') || MOCK.hoteis[state.hotelId]?.nome || '—';
+  document.getElementById('debug-data').innerHTML =
+    `Hotel: <b>${nome}</b> (id=${state.hotelId}) | Idioma: <b>${state.idiomaIso}</b> | Modo: <b>${state.online ? 'API' : 'MOCK'}</b>`;
+}
+
+/* Relógio */
+function tick() {
+  const d = new Date();
+  document.getElementById('clock').textContent =
+    String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+tick();
+setInterval(tick, 10000);
+
+/* Boot */
+initHotel();
+</script>
+</body>
+</html>
